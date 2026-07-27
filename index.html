@@ -712,12 +712,15 @@ function demoUrl(mv){
 }
 
 /* ---------- mini timers ---------- */
-function beep(){
+function beep(freq,dur){
   try{
-    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    const ac=ensureCtx(); if(!ac) return;
     const o=ac.createOscillator(),g=ac.createGain();
-    o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.15;
-    o.start();o.stop(ac.currentTime+.18);
+    o.connect(g);g.connect(ac.destination);
+    o.frequency.value=freq||880;
+    g.gain.setValueAtTime(0.25,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+(dur||0.18));
+    o.start();o.stop(ac.currentTime+(dur||0.18));
   }catch(e){}
 }
 function attachMiniTimer(el){
@@ -725,11 +728,13 @@ function attachMiniTimer(el){
   let running=false, remain=secs, iv=null;
   const span=el.querySelector('.miniTimer');
   el.onclick=()=>{
+    ensureCtx();
     if(running){ clearInterval(iv);running=false;span.textContent='▶ '+remain+'s';return; }
     running=true; remain=remain>0?remain:secs;
     span.textContent=remain+'s';
     iv=setInterval(()=>{
-      remain--; if(remain<=0){clearInterval(iv);running=false;beep();span.textContent='✓ done';setTimeout(()=>span.textContent='▶ '+secs+'s',1500);return;}
+      remain--; if(remain<=0){clearInterval(iv);running=false;beep(880,.3);span.textContent='✓ done';setTimeout(()=>span.textContent='▶ '+secs+'s',1500);return;}
+      if(remain<=3) beep(660,.09);
       span.textContent=remain+'s';
     },1000);
   };
@@ -805,9 +810,9 @@ function startCountdown(mv,v){
     if(pPaused) return;
     pRemain--;
     P.big.textContent=Math.max(pRemain,0)+"s";
-    if(pRemain<=3 && pRemain>0) speak(String(pRemain));
+    if(pRemain<=3 && pRemain>0){ beep(660,.09); speak(String(pRemain)); }
     if(pRemain<=0){
-      clearInterval(pTimer); beep();
+      clearInterval(pTimer); beep(880,.3);
       if(mv.side && pSide===0){
         pSide=1; P.side.textContent="Side 2"; speakNow("Switch sides");
         pRemain= mv.t==="stretch"?holdFor(mv):Math.min(Math.round(mv.dur*(1+level*0.15)),60);
@@ -826,7 +831,8 @@ function goRest(){
     P.fig.innerHTML='';
     pTimer=setInterval(()=>{
       if(pPaused)return; pRemain--; P.big.textContent=Math.max(pRemain,0)+"s";
-      if(pRemain<=0){clearInterval(pTimer);beep();nextStep();}
+      if(pRemain>0&&pRemain<=3) beep(660,.09);
+      if(pRemain<=0){clearInterval(pTimer);beep(880,.3);nextStep();}
     },1000);
   }else{
     nextStep();
