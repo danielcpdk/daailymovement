@@ -283,7 +283,8 @@ const SVG = {
 
 /* ---------- move library ---------- */
 const IMG = {};
-function figHtml(k){ var u=IMG[k]; return (u&&u.slice(0,6)!=='asset:')?'<img src="'+u+'" alt="" loading="lazy">':(SVG[k]||''); }
+window.figFallback=function(img,k){ var w=img.parentNode; if(w) w.innerHTML=SVG[k]||''; };
+function figHtml(k){ return '<img src="'+k+'.jpg" alt="" loading="lazy" onerror="figFallback(this,\''+k+'\')">'; }
 function refreshIMG(){ var p=document.getElementById('assetPool'); if(!p)return; var a=p.getElementsByTagName('img'); for(var i=0;i<a.length;i++){ var im=a[i], u=im.currentSrc||im.getAttribute('src')||''; if(u&&u.slice(0,6)!=='asset:') IMG[im.dataset.k]=u; } }
 const M = {
   catcow:{n:"Cat–Cow",t:"stretch",fig:"catcow",side:false,region:"Spine warm-up",
